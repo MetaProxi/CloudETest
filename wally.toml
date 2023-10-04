@@ -1,0 +1,12 @@
+[package]
+name = "proxi/cloudetest"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+Comm = "sleitnick/comm@0.3.2"
+Knit = "sleitnick/knit@1.5.3"
+Roact = "roblox/roact@1.4.4"
+Roact-spring = "chriscerie/roact-spring@2.0.0"
+Rodux = "roblox/rodux@3.0.0"
