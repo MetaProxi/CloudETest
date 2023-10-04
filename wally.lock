@@ -15,7 +15,7 @@ dependencies = []
 [[package]]
 name = "proxi/cloudetest"
 version = "0.1.0"
-dependencies = [["Comm", "sleitnick/comm@0.3.2"], ["Knit", "sleitnick/knit@1.5.3"], ["Roact", "roblox/roact@1.4.4"], ["Roact-spring", "chriscerie/roact-spring@2.0.0"], ["Rodux", "roblox/rodux@3.0.0"]]
+dependencies = [["Comm", "sleitnick/comm@0.3.2"], ["Knit", "sleitnick/knit@1.5.3"], ["Roact", "roblox/roact@1.4.4"], ["RoactRodux", "roblox/roact-rodux@0.5.1"], ["RoactSpring", "chriscerie/roact-spring@2.0.0"], ["Rodux", "roblox/rodux@3.0.0"]]
 
 [[package]]
 name = "roblox/roact"
@@ -23,8 +23,18 @@ version = "1.4.4"
 dependencies = []
 
 [[package]]
+name = "roblox/roact-rodux"
+version = "0.5.1"
+dependencies = [["Roact", "roblox/roact@1.4.4"], ["Rodux", "roblox/rodux@4.0.0-rc.0"]]
+
+[[package]]
 name = "roblox/rodux"
 version = "3.0.0"
+dependencies = []
+
+[[package]]
+name = "roblox/rodux"
+version = "4.0.0-rc.0"
 dependencies = []
 
 [[package]]
