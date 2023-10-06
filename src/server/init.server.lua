@@ -1,9 +1,9 @@
 
---API Services
+--Get Dependencies
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
---Dependencies
-local Packages = ReplicatedStorage.Packages
+local Packages = ReplicatedStorage:WaitForChild("Packages")
 local Knit = require(Packages.Knit)
 
---Knit Services
+--Setup Knit
+Knit.AddServicesDeep(script.Services)
+Knit.Start():catch(warn)

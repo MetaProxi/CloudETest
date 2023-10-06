@@ -7,7 +7,17 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local Roact = require(ReplicatedStorage.Packages.Roact)
 local RoactSpring = require(ReplicatedStorage.Packages.RoactSpring)
 
-local ItemButton = Roact.PureComponent:extend("ItemButton")
+local ItemButton = Roact.PureComponent:extend("ItemButton") :: Roact.Component
+
+--Types
+type Props = {
+    itemId: string,
+    itemIcon: string,
+    itemName: string,
+    quantity: number,
+    selected: boolean,
+    onSelect: (number) -> (),
+}
 
 function ItemButton:init()
 
@@ -17,51 +27,85 @@ function ItemButton:init()
         itemIcon = "rbxassetid://0",
         itemName = "-{PLACEHOLDER}-",
         quantity = 0,
-    } :: {
-        itemId: string,
-        itemIcon: string,
-        itemName: string,
-        quantity: number,
-    }
+        selected = false,
+        onSelect = function() end,
+    } :: Props
     
+
+    --TODO: Type these.
     self.styles,self.springApi = RoactSpring.Controller.new({
         size = UDim2.new(0,0,0,0),
+        highlightColor = Color3.fromRGB(255, 255, 255),
+        backgroundColor = Color3.fromRGB(164, 255, 217),
         config = {mass = 0.4,tension = 300} -- Low mass to keep the animation snappy
     })
-    
+
 end
 
 function ItemButton:render()
-    local props = self.props
-    local state = self.state
+    local props = self.props :: Props
+    local baseSize = props.selected and UDim2.new(0.9,0,0.9,0) or UDim2.new(0.8,0,0.8,0)
 
+    
     --pop in animation
-    task.delay(0.1,function()
+    self.springApi:start({
+        size = baseSize,
+        config = {mass = 0.4,tension = 400, friction = 7} -- Bounce in!
+    })
+
+    if props.selected then
         self.springApi:start({
-            size = UDim2.new(0.8,0,0.8,0)
+            backgroundColor = Color3.fromRGB(149, 221, 255),
+            size = UDim2.new(0.9,0,0.9,0),
         })
-    end)
+    else
+        self.springApi:start({
+            backgroundColor = Color3.fromRGB(164, 255, 217),
+            size = UDim2.new(0.8,0,0.8,0),
+        })
+    end
+
+
+    
 
     return Roact.createElement("ImageButton", {
         Size = self.styles.size,
         SizeConstraint = Enum.SizeConstraint.RelativeYY,
-        BackgroundColor3 = Color3.fromRGB(164, 255, 217),
+        BackgroundColor3 = self.styles.backgroundColor,
         BackgroundTransparency = 0,
         Image = props.itemIcon,
+        AutoButtonColor = false,
         LayoutOrder = props.Id,
         [Roact.Event.Activated] = function()
-            print("Clicked")
+            if not props.onSelect then return end
+            props.onSelect(props.Id)
+        end;
+
+        [Roact.Event.MouseButton1Down] = function()
+            self.springApi:start({
+                size = UDim2.new(0.7,0,0.7,0),
+            })
+        end;
+
+        [Roact.Event.MouseButton1Up] = function()
+            self.springApi:start({
+                size = UDim2.new(0.9,0,0.9,0),
+                config = {mass = 0.6,tension = 500,friction = 10} -- Make it bounce a little to make it feel more impactful
+            })
         end;
 
         [Roact.Event.MouseEnter] = function()
             self.springApi:start({
-                size = UDim2.new(0.9,0,0.9,0)
+                size = UDim2.new(0.9,0,0.9,0),
+                highlightColor = Color3.fromRGB(247, 255, 137),
+                config = {mass = 0.2,tension = 500} -- Make it bounce a little to make it feel more impactful
             })
         end;
 
         [Roact.Event.MouseLeave] = function()
             self.springApi:start({
-                size = UDim2.new(0.8,0,0.8,0)
+                size = baseSize,
+                highlightColor = Color3.fromRGB(255, 255, 255),
             })
         end;
     }, {
@@ -78,6 +122,11 @@ function ItemButton:render()
             Rotation = 90,
         }),
 
+        Roact.createElement("UIStroke", {
+            Color = self.styles.highlightColor,
+            Thickness = 3,
+        }),
+
         Roact.createElement("TextLabel", { -- Input Name
             
             Size = UDim2.new(0.9,0,0.3,0),
@@ -85,7 +134,7 @@ function ItemButton:render()
             AnchorPoint = Vector2.new(0.5,0),
             Position = UDim2.new(0.5,0,0,0),
             BackgroundTransparency = 1,
-            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextColor3 = self.styles.highlightColor,
             TextScaled = true,
             RichText = true,
             Font = Enum.Font.FredokaOne,
@@ -98,10 +147,11 @@ function ItemButton:render()
             AnchorPoint = Vector2.new(0.5,1),
             Position = UDim2.new(0.5,0,1,0),
             BackgroundTransparency = 1,
-            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextColor3 = self.styles.highlightColor,
             TextScaled = true,
             RichText = true,
             Font = Enum.Font.FredokaOne,
+            Visible = props.quantity > 1,
             Text = string.format("<stroke><b>x%d</b></stroke>",props.quantity),
         })
     })

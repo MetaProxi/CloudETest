@@ -16,7 +16,8 @@ return function(target)
 
     local inventoryStore = Rodux.Store.new(function(state,action)
         state = state or {
-            Inventory = {}
+            Inventory = {},
+            Equipped = ""
         }
 
         if action.type == "addItem" then
@@ -24,22 +25,21 @@ return function(target)
             local existingItem = newInventory[action.item.Id]
             if existingItem then
                 existingItem.quantity = existingItem.quantity + action.item.quantity
-                return {
-                    Inventory = newInventory
-                }
+                state.Inventory = newInventory
             else
                 newInventory[action.item.Id] = action.item
-                return {
-                    Inventory = newInventory
-                }
+                state.Inventory = newInventory
             end
         elseif action.type == "removeItem" then
             local item = action.id or "1"
             local newInventory = table.clone(state.Inventory)
             newInventory[item] = nil
-            return {
-                Inventory = newInventory
-            }
+            state.Inventory = newInventory
+        elseif action.type == "equipItem" then
+            state.Equipped = action.id
+        elseif action.type == "unequipItem" then
+            print("Unequipped")
+            state.Equipped = ""
         end
 
         return state
