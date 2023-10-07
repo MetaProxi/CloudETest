@@ -15,7 +15,7 @@ local hotBar = Roact.Component:extend("Hotbar") :: Roact.Component
 
 --Types(I find it extremely difficult to use types with Roact, but here's trying!)
 type Props = {
-    Inventory: {[string]: {itemId: string, itemIcon: string, itemName: string, quantity: number}}?;
+    Inventory: {[string]: {itemId: string, itemIcon: string, itemName: string, quantity: number, selected: (string) -> ()}}; -- This is the inventory table from the store
     onSelect: (string) -> ();
     Position: UDim2?;
     AnchorPoint: Vector2?;
@@ -30,7 +30,7 @@ function hotBar:init()
         SelectedId = Roact.None;
     })
 
-    
+    self.ButtonNumbers = {} :: {[number]: string} -- This is used to keep track of which button is which number, so we can use keyboard shortcuts
 end
 
 function hotBar:setSelected(id: string) : string -- Simple function to update the selected state, returns the id for use in the callback
@@ -50,36 +50,20 @@ function hotBar:didMount()
     local props = self.props :: Props
     local state = self.state :: State
 
-    local function selected(id: string) -- Update the selected state before calling the onClick callback
-        props.onSelect(self:setSelected(id))
+    local function selected(itemId: string) -- Update the selected state before calling the onClick callback
+        props.onSelect(self:setSelected(itemId))
     end
+
 
     ContextActionService:BindAction("SelectItemKeyboard", function(_, inputState: Enum.UserInputState, inputObject: InputObject)
         --NOTE: 48 is the keycode for 0, 49 is the keycode for 1, etc.
         local numberValue = inputObject.KeyCode.Value - 48 -- Convert the keycode to a number via the enum value
 
         if inputState == Enum.UserInputState.Begin then
-            local id = tostring(numberValue)
-            selected(id)
+            local itemId = self.ButtonNumbers[numberValue]
+            selected(itemId or "")
         end
     end, false, Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four, Enum.KeyCode.Five, Enum.KeyCode.Six, Enum.KeyCode.Seven, Enum.KeyCode.Eight, Enum.KeyCode.Nine)
-
-    ContextActionService:BindAction("SelectItemController", function(_, inputState, inputObject)
-        local currentSelection = state.SelectedId
-        local left = inputObject.KeyCode == Enum.KeyCode.DPadLeft or inputObject.KeyCode == Enum.KeyCode.ButtonL2
-        local right = inputObject.KeyCode == Enum.KeyCode.DPadRight or inputObject.KeyCode == Enum.KeyCode.ButtonR2
-
-        if inputState ~= Enum.UserInputState.Begin then return end
-
-        if left then
-            local id = (currentSelection == "") and "9" or tostring(tonumber(currentSelection) - 1)
-            selected(id)
-        elseif right then
-            local id = (currentSelection == "") and "1" or tostring(tonumber(currentSelection) + 1)
-            selected(id)
-        end
-
-    end, false, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonL2, Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadDown)
 
 end
 
@@ -94,19 +78,41 @@ function hotBar:render() : Roact.Element
     local inventory = props.Inventory :: {[string]: {itemId: string, itemIcon: string, itemName: string, quantity: number}} 
     local buttons = {} :: {[string]: Roact.Element}
 
-    local function selected(id: string) -- Update the selected state before calling the onClick callback
-        props.onSelect(self:setSelected(id))
+    local function selected(itemId: string) -- Update the selected state before calling the onClick callback
+        props.onSelect(self:setSelected(itemId))
     end
 
+    --This is kind of gross for time complexity, but it's not like we're dealing with a lot of items
 
-    for id, item in inventory do
-        buttons[id] = Roact.createElement(ItemButton, {
-            Id = id, -- This is the layout order and the input id on the hotbar
+    --Clear buttonnumbers with no items
+    for i = 1, 9 do
+        if not inventory[self.ButtonNumbers[i]] then
+            self.ButtonNumbers[i] = nil
+        end
+    end
+
+    for itemId, item in inventory do
+        local buttonNumber = ""
+
+        --Find a number that isn't already taken
+        for i = 1, 9 do
+            if self.ButtonNumbers[i] == itemId then
+                buttonNumber = tostring(i)
+                break
+            elseif self.ButtonNumbers[i] == nil then
+                self.ButtonNumbers[i] = itemId
+                buttonNumber = tostring(i)
+                break
+            end
+        end
+        
+        buttons[itemId] = Roact.createElement(ItemButton, {
             itemId = item.itemId, -- This is the id of the item in the database
             itemIcon = item.itemIcon, -- This is the icon of the item in the database
             itemName = item.itemName, -- This is the name of the item in the database, shows up on hover
             quantity = item.quantity, -- This is the quantity of the item in the database
-            selected = self.state.SelectedId == id, -- This is a boolean that determines if the item is selected
+            buttonNumber = buttonNumber, -- This is the string that shows up on the button
+            selected = self.state.SelectedId == itemId, -- This is a boolean that determines if the item is selected
             onSelect = selected, -- This is the callback that is called when the item is clicked
         })
     end
@@ -149,11 +155,12 @@ hotBar = RoactRodux.connect(
     end,
     function(dispatch: (any) -> ())
         return {
-            onSelect = function(id)
-                local actionType = (id ~= "") and "equipItem" or "unequipItem"
+            onSelect = function(itemId)
+                local actionType = (itemId ~= "") and "equipItem" or "unequipItem"
+                print("OnSelect: ".. itemId)
                 dispatch({
                     type = actionType,
-                    id = id
+                    itemId = itemId
                 })
             end
         }

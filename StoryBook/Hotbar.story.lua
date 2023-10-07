@@ -22,21 +22,22 @@ return function(target)
 
         if action.type == "addItem" then
             local newInventory = table.clone(state.Inventory)
-            local existingItem = newInventory[action.item.Id]
+            local existingItem = newInventory[action.item.itemId]
             if existingItem then
                 existingItem.quantity = existingItem.quantity + action.item.quantity
                 state.Inventory = newInventory
             else
-                newInventory[action.item.Id] = action.item
+                newInventory[action.item.itemId] = action.item
                 state.Inventory = newInventory
             end
         elseif action.type == "removeItem" then
-            local item = action.id or "1"
+            local item = action.itemId
+            if not item then return state end
             local newInventory = table.clone(state.Inventory)
             newInventory[item] = nil
             state.Inventory = newInventory
         elseif action.type == "equipItem" then
-            state.Equipped = action.id
+            state.Equipped = action.itemId
         elseif action.type == "unequipItem" then
             print("Unequipped")
             state.Equipped = ""
@@ -63,18 +64,17 @@ return function(target)
             inventoryStore:dispatch({
                 type = "addItem",
                 item = {
-                    Id = tostring(i),
-                    itemId = tostring(i),
+                    itemId = string.format("Item%d",i),
                     itemIcon = "rbxassetid://0",
                     itemName = "Test Item"..i,
-                    quantity = 1,
+                    quantity = math.random(1,300),
                 }
             })
         end
         task.wait(4)
         inventoryStore:dispatch({
             type = "removeItem";
-            id = "9";
+            itemId = string.format("Item%d",9);
         })
     end)
 

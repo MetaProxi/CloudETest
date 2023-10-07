@@ -66,7 +66,7 @@ function ItemButton:render()
     end
 
 
-    
+    props.inputString = props.inputString or 0
 
     return Roact.createElement("ImageButton", {
         Size = self.styles.size,
@@ -75,10 +75,10 @@ function ItemButton:render()
         BackgroundTransparency = 0,
         Image = props.itemIcon,
         AutoButtonColor = false,
-        LayoutOrder = props.Id,
+        LayoutOrder = props.buttonNumber,
         [Roact.Event.Activated] = function()
             if not props.onSelect then return end
-            props.onSelect(props.Id)
+            props.onSelect(props.itemId)
         end;
 
         [Roact.Event.MouseButton1Down] = function()
@@ -138,7 +138,7 @@ function ItemButton:render()
             TextScaled = true,
             RichText = true,
             Font = Enum.Font.FredokaOne,
-            Text = string.format("<stroke><b>%s</b></stroke>",props.Id),
+            Text = string.format("<stroke><b>%s</b></stroke>",props.buttonNumber),
         }),
 
         Roact.createElement("TextLabel", { -- Quantity
