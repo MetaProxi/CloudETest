@@ -8,6 +8,7 @@ local Knit = require(ReplicatedStorage.Packages.Knit)
 
 --Dependencies
 local Rodux = require(ReplicatedStorage.Packages.Rodux)
+local ReplicationMiddleware = require(script.Parent.Parent.Modules.ReplicationMiddleware)
 
 --Types
 type PlayerInventory = {
@@ -70,17 +71,8 @@ function InventoryService:KnitInit()
 
         return store
     end
-
-    local function replicationMiddleware(nextDispatch)
-        return function(action)
-            local player = action.player
-            if player then action.player = nil end
-            self.Client.InventoryAction:Fire(player,action)
-            return nextDispatch(action)
-        end
-    end
     
-    self.Inventory = Rodux.Store.new(inventoryReducer,{},{replicationMiddleware})
+    self.Inventory = Rodux.Store.new(inventoryReducer,{},{ReplicationMiddleware(self.Client.InventoryAction)})
 
 end
 
