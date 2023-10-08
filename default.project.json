@@ -12,6 +12,9 @@
       },
       "StoryBook": {
         "$path": "StoryBook"
+      },
+      "Assets": {
+        "$path": "Assets"
       }
     },
 
