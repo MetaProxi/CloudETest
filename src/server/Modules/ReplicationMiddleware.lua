@@ -1,17 +1,13 @@
 --Wrapper for various Knit services to be used as middleware for Rodux
 
 
-return function (remote)
+return function (remote) --@param remote RemoteEvent The remote event that is used to communicate with the client
     return function (nextDispatch,store)
         return function(action)
             local player = action.player
-            if player then action.player = nil end
-            local beforeState = store:getState()
             local result = nextDispatch(action)
             local afterState = store:getState()
-            if beforeState ~= afterState then
-                remote:Fire(player,action,beforeState,afterState)
-            end
+            remote:Fire(player,action)
         end
     end
 end
