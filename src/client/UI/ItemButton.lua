@@ -68,12 +68,15 @@ function ItemButton:render()
 
     props.inputString = props.inputString or 0
 
+    local viewportCamera = Instance.new("Camera")
+    viewportCamera.FieldOfView = 60
+    viewportCamera.CFrame = CFrame.new(Vector3.new(0,0,3),Vector3.new(0,0,-1))
+
     return Roact.createElement("ImageButton", {
         Size = self.styles.size,
         SizeConstraint = Enum.SizeConstraint.RelativeYY,
         BackgroundColor3 = self.styles.backgroundColor,
         BackgroundTransparency = 0,
-        Image = props.itemIcon,
         AutoButtonColor = false,
         LayoutOrder = props.buttonNumber,
         [Roact.Event.Activated] = function()
@@ -139,6 +142,7 @@ function ItemButton:render()
             RichText = true,
             Font = Enum.Font.FredokaOne,
             Text = string.format("<stroke><b>%s</b></stroke>",props.buttonNumber),
+            ZIndex = 2
         }),
 
         Roact.createElement("TextLabel", { -- Quantity
@@ -153,7 +157,34 @@ function ItemButton:render()
             Font = Enum.Font.FredokaOne,
             Visible = props.quantity > 1,
             Text = string.format("<stroke><b>x%d</b></stroke>",props.quantity),
-        })
+            ZIndex = 2
+        }),
+
+        Roact.createElement("ViewportFrame", { -- Tool
+            Size = UDim2.new(0.9,0,0.9,0),
+            BackgroundTransparency = 1,
+            AnchorPoint = Vector2.new(0.5,0.5),
+            Position = UDim2.new(0.5,0,0.5,0),
+            CurrentCamera = viewportCamera,
+            ImageColor3 = Color3.fromRGB(255, 255, 255),
+            ImageTransparency = 0,
+            ZIndex = 1,
+
+        }, {
+            Tool = Roact.createElement("Model", {
+                Name = "Tool",
+                [Roact.Ref] = function(rbx)
+                    if not props.tool then return end
+                    if rbx then
+                        rbx:ClearAllChildren()
+                        local tool = props.tool.Handle:Clone()
+                        tool.Parent = rbx
+
+                        tool.CFrame = CFrame.new()
+                    end
+                end
+            })
+        }) 
     })
 
 end

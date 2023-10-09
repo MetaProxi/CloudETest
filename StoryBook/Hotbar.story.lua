@@ -61,10 +61,16 @@ return function(target)
     task.delay(1,function()
         for i = 1, 9 do
             task.wait(0.1)
+            local id = string.format("Item%d",i)
+            if i == 1 then 
+                id = "Apple"
+            elseif i == 2 then
+                id = "Orange"
+            end
             inventoryStore:dispatch({
                 type = "addItem",
                 item = {
-                    itemId = string.format("Item%d",i),
+                    itemId = id,
                     itemIcon = "rbxassetid://0",
                     itemName = "Test Item"..i,
                     quantity = math.random(1,300),

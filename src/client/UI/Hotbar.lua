@@ -7,15 +7,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Packages = ReplicatedStorage.Packages
 local Roact = require(Packages.Roact)
 local RoactRodux = require(Packages.RoactRodux)
+local ItemData = require(ReplicatedStorage.Common.ItemData)
 
 --Components
 local ItemButton = require(script.Parent.ItemButton)
 
-local hotBar = Roact.Component:extend("Hotbar") :: Roact.Component
+local HotBar = Roact.Component:extend("Hotbar") :: Roact.Component
 
 --Types(I find it extremely difficult to use types with Roact, but here's trying!)
 type Props = {
-    Inventory: {[string]: {itemId: string, itemIcon: string, itemName: string, quantity: number, selected: (string) -> ()}}; -- This is the inventory table from the store
+    Inventory: {[string]: {itemId: string, itemIcon: string, itemName: string, quantity: number}}; -- This is the inventory table from the store
     onSelect: (string) -> ();
     Position: UDim2?;
     AnchorPoint: Vector2?;
@@ -25,7 +26,7 @@ type State = {
     SelectedId: string?;
 }
 
-function hotBar:init()
+function HotBar:init()
     self:setState({
         SelectedId = Roact.None;
     })
@@ -33,7 +34,7 @@ function hotBar:init()
     self.ButtonNumbers = {} :: {[number]: string} -- This is used to keep track of which button is which number, so we can use keyboard shortcuts
 end
 
-function hotBar:setSelected(id: string) : string -- Simple function to update the selected state, returns the id for use in the callback
+function HotBar:setSelected(id: string) : string -- Simple function to update the selected state, returns the id for use in the callback
 
     local inventory = self.props.Inventory
     if not inventory[id] or self.state.SelectedId == id then
@@ -45,7 +46,7 @@ function hotBar:setSelected(id: string) : string -- Simple function to update th
     return id -- Used by the callback to update the store
 end
 
-function hotBar:didMount()
+function HotBar:didMount()
     
     local props = self.props :: Props
     local state = self.state :: State
@@ -68,7 +69,7 @@ function hotBar:didMount()
 end
 
 
-function hotBar:render() : Roact.Element
+function HotBar:render() : Roact.Element
 
 
     local props = self.props:: Props
@@ -92,6 +93,10 @@ function hotBar:render() : Roact.Element
     end
 
     for itemId, item in inventory do
+
+        if not itemId then
+            continue
+        end
         local buttonNumber = ""
 
         --Find a number that isn't already taken
@@ -106,10 +111,15 @@ function hotBar:render() : Roact.Element
             end
         end
         
+        local tool: Tool? = nil
+        if ItemData[itemId] then
+            tool = ItemData[itemId].Tool
+        end
+
         buttons[itemId] = Roact.createElement(ItemButton, {
             itemId = item.itemId, -- This is the id of the item in the database
-            itemIcon = item.itemIcon, -- This is the icon of the item in the database
             itemName = item.itemName, -- This is the name of the item in the database, shows up on hover
+            tool = tool, -- This is cloned into a viewportframe.
             quantity = item.quantity, -- This is the quantity of the item in the database
             buttonNumber = buttonNumber, -- This is the string that shows up on the button
             selected = self.state.SelectedId == itemId, -- This is a boolean that determines if the item is selected
@@ -120,7 +130,7 @@ function hotBar:render() : Roact.Element
 
 
     return Roact.createElement("Frame",{
-            Size = UDim2.new(0.5,0,0,100),
+            Size = UDim2.new(0.5,0,0,100),  
             Position = position,
             AnchorPoint = anchorPoint,
             BackgroundColor3 = Color3.fromRGB(255, 255, 255),
@@ -138,7 +148,7 @@ function hotBar:render() : Roact.Element
     )
 end
 
-function hotBar:willUnmount()
+function HotBar:willUnmount()
     --NOTE: This seemingly causes an issue with hoarcekat when hot reloading, but it doesn't seem to cause any issues with the actual game
     -- If you wish to test input, manually deselect and reselect the storybook using it, giving some time between for this to run.
     ContextActionService:UnbindAction("SelectItemKeyboard")
@@ -147,7 +157,7 @@ function hotBar:willUnmount()
     
 end
 
-hotBar = RoactRodux.connect(
+HotBar = RoactRodux.connect(
     function(state: {Inventory: {[string]: {itemId: string, itemIcon: string, itemName: string, quantity: number}}})
         return {
             Inventory = state.Inventory
@@ -165,6 +175,6 @@ hotBar = RoactRodux.connect(
             end
         }
     end
-)(hotBar)
+)(HotBar)
 
-return hotBar
+return HotBar
