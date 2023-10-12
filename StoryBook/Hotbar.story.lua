@@ -50,8 +50,8 @@ return function(target)
         store = inventoryStore,
     },{
         Hotbar = Roact.createElement(Hotbar, {
-            Position = UDim2.new(0.5,0,0.9,0),
-            AnchorPoint = Vector2.new(0.5,0.5),
+            Position = UDim2.new(0.5,0,0.95,-10),
+            AnchorPoint = Vector2.new(0.5,1),
             Inventory = {}
         })
     })
