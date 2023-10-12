@@ -158,9 +158,9 @@ function HotBar:willUnmount()
 end
 
 HotBar = RoactRodux.connect(
-    function(state: {Inventory: {[string]: {itemId: string, itemIcon: string, itemName: string, quantity: number}}})
+    function(state: {inventory: {[string]: {itemId: string, itemIcon: string, itemName: string, quantity: number}}})
         return {
-            Inventory = state.Inventory
+            Inventory = state.inventory
         }
     end,
     function(dispatch: (any) -> ())

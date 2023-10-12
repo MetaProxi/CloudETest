@@ -8,9 +8,7 @@ local Players = game:GetService("Players")
 local Knit = require(ReplicatedStorage.Packages.Knit)
 
 --Dependencies
-local Comm = require(ReplicatedStorage.Packages.Comm).ServerComm
-local Rodux = require(ReplicatedStorage.Packages.Rodux)
-local ReplicationMiddleware = require(script.Parent.Parent.Modules.ReplicationMiddleware)
+local DataService
 
 --Variables
 local ToolModules = script.Parent.Parent.ToolModules
@@ -49,75 +47,75 @@ function InventoryService.Client:GetInventory()
     return self.Server.Inventory[Players.LocalPlayer]
 end
 
-function InventoryService:EquipItem(itemId: string)
-   local item = self.Inventory[Players.LocalPlayer].Inventory[itemId]   
-end
-
 
 function InventoryService:KnitStart()
 
-    local dataService = Knit.GetService("DataService")
+    DataService = Knit.GetService("DataService")
 
     local function inventoryReducer(state,action)
         state = state or {}
-         if action.type == "addPlayer" then
-            local playerState = state[action.player] or {}
-            playerState.Inventory = {}
-            playerState.equipped = ""
-            state[action.player] = playerState
-         elseif action.type == "removePlayer" then
-            state[action.player] = nil
-         elseif action.type == "addItem" then
-            print("Adding item")
-            local newInventory = table.clone(state[action.player].Inventory)
-            local existingItem = newInventory[action.item.itemId]
+        
+        local newPlayerState = state[action.player] or {}
 
-            local playerBackpack = action.player:FindFirstChild("Backpack")
- 
-            if existingItem then --Item exists, add to quantity
-                existingItem.quantity = existingItem.quantity + action.item.quantity
-                state[action.player].Inventory = newInventory
-            else -- Item doesn't exist, add it to the inventory and set it up.
-                print("Giving tool")
-                local data = ItemData[action.item.itemId]
-                local tool = data.Tool:Clone()
-                tool.Parent = playerBackpack
-                action.item.tool = tool
-                newInventory[action.item.itemId] = action.item
+        if action.type == "addPlayer" then
+        
+        newPlayerState.inventory = {}
+        newPlayerState.equipped = ""
 
-                ConnectTool(action.player,tool) -- Setup the tool
+        elseif action.type == "addItem" then
+        local newInventory = newPlayerState.inventory
+        local existingItem = newInventory[action.item.itemId]
 
-                state[action.player].Inventory = newInventory
-            end
-         elseif action.type == "removeItem" then
-            local item = action.itemId
-            local newInventory = table.clone(state[action.player].Inventory)
+        local playerBackpack = action.player:FindFirstChild("Backpack")
 
-            
+        if existingItem then --Item exists, add to quantity
+            existingItem.quantity = existingItem.quantity + action.item.quantity
+            newPlayerState.inventory = newInventory
+        else -- Item doesn't exist, add it to the inventory and set it up.
+            local data = ItemData[action.item.itemId]
+            local tool = data.Tool:Clone()
+            tool.Parent = playerBackpack
+            action.item.tool = tool
+            newInventory[action.item.itemId] = action.item
 
-            newInventory[item].quantity = newInventory[item].quantity - (action.quantity or 1)
-            if newInventory[item].quantity <= 0 then
+            ConnectTool(action.player,tool) -- Setup the tool
 
-                DisconnectTool(action.player,newInventory[item].tool) -- Disconnect the tool and cleanup
+            newPlayerState.inventory = newInventory
+        end
 
-                newInventory.equipped = ""
-                newInventory[item] = nil
-            end
+        elseif action.type == "removeItem" then
+        local item = action.itemId
+        local newInventory = newPlayerState.inventory
 
-             state[action.player].Inventory = newInventory
-         elseif action.type == "equipItem" then
-             state[action.player].equipped = action.itemId
-         elseif action.type == "unequipItem" then
-             state[action.player].equipped = ""
-         end
- 
-         return state
+        
+
+        newInventory[item].quantity = newInventory[item].quantity - (action.quantity or 1)
+        if newInventory[item].quantity <= 0 then
+
+            DisconnectTool(action.player,newInventory[item].tool)
+
+            newInventory.equipped = ""
+            newInventory[item] = nil
+        end
+
+            newPlayerState.inventory = newInventory
+        elseif action.type == "equipItem" then
+            newPlayerState.equipped = action.itemId
+
+        elseif action.type == "unequipItem" then
+            newPlayerState.equipped = ""
+
+        else
+            return state
+        end
+        state[action.player] = table.clone(newPlayerState)
+        return state
      end
     
-    dataService:AddReducer("Inventory",inventoryReducer)
+    DataService:AddReducer("Inventory",inventoryReducer)
 
     Players.PlayerAdded:Connect(function(player)
-        dataService:Dispatch({
+        DataService:Dispatch({
             type = "addPlayer";
             player = player;
         })
@@ -125,7 +123,7 @@ function InventoryService:KnitStart()
         task.delay(1,function()
             for i = 1, 9 do
                 task.wait(1)
-                dataService:Dispatch({
+                DataService:Dispatch({
                     type = "addItem";
                     player = player;
                     item = {
@@ -135,13 +133,6 @@ function InventoryService:KnitStart()
                 })
             end
         end)
-    end)
-
-    Players.PlayerRemoving:Connect(function(player)
-        dataService:Dispatch({
-            type = "removePlayer";
-            player = player;
-        })
     end)
 
 end

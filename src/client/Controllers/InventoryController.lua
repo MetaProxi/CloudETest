@@ -57,25 +57,25 @@ function InventoryController:KnitStart()
     local function inventoryReducer(state,action)
         
         if action.type == "addItem" then
-            local newInventory = table.clone(state.Inventory)
+            local newInventory = table.clone(state.inventory)
             local existingItem = newInventory[action.item.itemId]
             if existingItem then -- Item already exists, increment quantity
                 existingItem.quantity = existingItem.quantity + action.item.quantity
-                state.Inventory = newInventory
+                state.inventory = newInventory
             else -- Item doesn't exist, add it and find the tool in backpack
                 local playerBackpack = LocalPlayer:FindFirstChild("Backpack")
                 local data = ItemData[action.item.itemId]
                 local tool = playerBackpack:FindFirstChild(data.Tool.Name)
                 action.item.tool = tool
                 newInventory[action.item.itemId] = action.item
-                state.Inventory = newInventory
+                state.inventory = newInventory
                 ConnectTool(tool) -- Setup the tool
 
                 
             end
         elseif action.type == "removeItem" then
             local item = action.itemId
-            local newInventory = table.clone(state.Inventory)
+            local newInventory = table.clone(state.inventory)
             newInventory[item].quantity = newInventory[item].quantity - (action.quantity or 1)
             if newInventory[item].quantity <= 0 then
                 state.equipped = ""
@@ -84,10 +84,10 @@ function InventoryController:KnitStart()
                 newInventory[item] = nil
             end
 
-            state.Inventory = newInventory
+            state.inventory = newInventory
         elseif action.type == "equipItem" then
             state.equipped = action.itemId
-            local tool = state.Inventory[action.itemId].tool
+            local tool = state.inventory[action.itemId].tool
             local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
             if humanoid then
                 humanoid:EquipTool(tool)
