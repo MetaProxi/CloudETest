@@ -16,7 +16,7 @@ local DataController = Knit.CreateController {
     Reducers = {};
 }
 
-function DataController:Dispatch(actionTable)
+function DataController:Dispatch(actionTable) -- Ideally this would only be used by replication to keep game state in sync
     if not self.Store then warn("Store not initialized") return end
     self.Store:dispatch(actionTable)
 end
@@ -52,7 +52,7 @@ function DataController:KnitInit()
         self:Dispatch(action)
     end)
 
-    self.Store = Rodux.Store.new(globalReducer,{Inventory = {}, equipped = ""},{})
+    self.Store = Rodux.Store.new(globalReducer,{inventory = {}, stats = {}, equipped = ""},{})
 end
 
 return DataController
