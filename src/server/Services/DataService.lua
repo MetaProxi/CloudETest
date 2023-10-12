@@ -35,6 +35,8 @@ end
 
 function DataService:KnitInit()
 
+
+    -- Create a global reducer that combines all of the reducers in the service. This allows us to form one central store for all of our data and allow us to dynamically add reducers to the store.
     local function globalReducer(state,action)
         state = state or {}
         for _,reducer in pairs(self.Reducers) do
