@@ -8,6 +8,7 @@ return function (remote) --@param remote RemoteEvent The remote event that is us
             local result = nextDispatch(action)
             local afterState = store:getState()
             remote:Fire(player,action)
+            return result
         end
     end
 end
