@@ -18,14 +18,19 @@ function StatController:KnitStart()
     local dataController = Knit.GetController("DataController")
 
     local reducer = function(state, action)
-        if action.stat and not state[action.stat] then
-            state[action.stat] = 100
+        state = state or {}
+        local newStats = state.stats
+        if action.stat and not state.stats[action.stat] then
+            newStats[action.stat] = 100
         end
         if action.type == "setStat" then
-            state[action.stat] = action.value
+            newStats[action.stat] = action.value
         elseif action.type == "incrementStat" then
-            state[action.stat] = state[action.stat] + action.value
+            newStats[action.stat] += action.value
+            newStats[action.stat] = math.clamp(newStats[action.stat],0,100)
+        else return state
         end
+        state.stats = table.clone(newStats)
         return state
     end
 
