@@ -6,6 +6,7 @@ realm = "shared"
 
 [dependencies]
 Comm = "sleitnick/comm@0.3.2"
+Component = "sleitnick/component@2.4.6"
 Knit = "sleitnick/knit@1.5.3"
 Roact = "roblox/roact@1.4.4"
 RoactRodux = "roblox/roact-rodux@0.5.1"
