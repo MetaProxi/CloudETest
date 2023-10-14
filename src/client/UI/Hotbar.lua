@@ -162,18 +162,6 @@ HotBar = RoactRodux.connect(
         return {
             Inventory = state.inventory
         }
-    end,
-    function(dispatch: (any) -> ())
-        return {
-            onSelect = function(itemId)
-                local actionType = (itemId ~= "") and "equipItem" or "unequipItem"
-                print("OnSelect: ".. itemId)
-                dispatch({
-                    type = actionType,
-                    itemId = itemId
-                })
-            end
-        }
     end
 )(HotBar)
 

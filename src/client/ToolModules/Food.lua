@@ -10,9 +10,8 @@ local Comm = require(ReplicatedStorage.Packages.Comm).ClientComm
 local Food = {Tools = {}}
 
 function Food:ConnectTool(tool: Tool)
+    print("Connecting tool")
     local toolComm = Comm.new(tool,true,"Food")
-    
-
     
     local activateEvent = tool.Activated:Connect(function()
         toolComm:GetSignal("Eat"):Fire()

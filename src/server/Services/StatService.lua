@@ -32,9 +32,10 @@ function StatService:KnitStart()
 
     local function statReducer(state,action)
         if not action.player then return state end -- If the action doesn't have a player, we don't care about it.
-        local newPlayerState = state[action.player] or {}
+        local newPlayerState = state.players[action.player.UserId] or {}
         local newStats = newPlayerState.stats or {}
         if action.stat and not newStats[action.stat] then
+            print("defaulting")
             newStats[action.stat] = DEFAULT_STATS[action.stat]
         end
         
@@ -46,12 +47,12 @@ function StatService:KnitStart()
         elseif action.type == "setStat" then
             newStats[action.stat] = action.value
         elseif action.type == "incrementStat" then
-            newStats[action.stat] += math.clamp(action.value,0,100)
+            newStats[action.stat] += action.value
             newStats[action.stat] = math.clamp(newStats[action.stat],0,100)
         else return state
         end
         newPlayerState.stats = table.clone(newStats)
-        state[action.player] = table.clone(newPlayerState)
+        state.players[action.player.UserId] = table.clone(newPlayerState)
         return state
     end
 
@@ -79,15 +80,24 @@ function StatService:KnitStart()
      -- This is a good enough solution for now.
     local drainClock = os.clock()
     RunService.Heartbeat:Connect(function(dt)
-        for _,player in pairs(Players:GetPlayers()) do
-            if os.clock() - drainClock > 0.1 then
-                drainClock = os.clock()
+        if os.clock() - drainClock > 0.1 then
+            drainClock = os.clock()
+            for _,player in pairs(Players:GetPlayers()) do
                 DataService:Dispatch({
                     type = "incrementStat",
                     player = player,
                     stat = "Hunger",
-                    value = -0.1,
+                    value = -0.4,
                 })
+                if DataService:GetState().players[player.UserId].stats.Hunger <= 0 then
+                    local character = player.Character
+                    if character then
+                        local humanoid = character:FindFirstChildOfClass("Humanoid")
+                        if humanoid then
+                            humanoid.Health -= 2
+                        end
+                    end
+                end
             end
         end
     end)

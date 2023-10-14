@@ -54,8 +54,10 @@ function InventoryService:KnitStart()
 
     local function inventoryReducer(state,action)
         state = state or {}
-        
-        local newPlayerState = state[action.player] or {}
+
+        if not action.player then return state end -- If the action doesn't have a player, we don't care about it.
+
+        local newPlayerState = state.players[action.player.UserId] or {}
 
         if action.type == "addPlayer" then
         
@@ -94,21 +96,27 @@ function InventoryService:KnitStart()
 
             DisconnectTool(action.player,newInventory[item].tool)
 
-            newInventory.equipped = ""
             newInventory[item] = nil
         end
 
             newPlayerState.inventory = newInventory
+            newPlayerState.equipped = ""
         elseif action.type == "equipItem" then
             newPlayerState.equipped = action.itemId
 
         elseif action.type == "unequipItem" then
             newPlayerState.equipped = ""
-
+        elseif action.type == "addCharacter" then
+            local newInventory = newPlayerState.inventory
+            for _,item in pairs(newInventory) do
+                DisconnectTool(action.player,item.tool)
+            end
+            newPlayerState.inventory = {}
+            newPlayerState.equipped = ""
         else
             return state
         end
-        state[action.player] = table.clone(newPlayerState)
+        state.players[action.player.UserId] = table.clone(newPlayerState)
         return state
      end
     
@@ -122,13 +130,12 @@ function InventoryService:KnitStart()
 
         task.delay(1,function()
             for i = 1, 9 do
-                task.wait(1)
                 DataService:Dispatch({
                     type = "addItem";
                     player = player;
                     item = {
                         itemId = math.random(1,2) == 1 and "Apple" or "Orange";
-                        quantity = math.random(1,5);
+                        quantity = 1
                     }
                 })
             end

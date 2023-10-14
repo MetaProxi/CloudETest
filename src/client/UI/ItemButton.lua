@@ -46,6 +46,8 @@ function ItemButton:render()
     local props = self.props :: Props
     local baseSize = props.selected and UDim2.new(0.9,0,0.9,0) or UDim2.new(0.8,0,0.8,0)
 
+    local quantity = props.quantity or 0
+
     
     --pop in animation
     self.springApi:start({
@@ -155,8 +157,8 @@ function ItemButton:render()
             TextScaled = true,
             RichText = true,
             Font = Enum.Font.FredokaOne,
-            Visible = props.quantity > 1,
-            Text = string.format("<stroke><b>x%d</b></stroke>",props.quantity),
+            Visible = quantity > 1,
+            Text = string.format("<stroke><b>x%d</b></stroke>",quantity),
             ZIndex = 2
         }),
 

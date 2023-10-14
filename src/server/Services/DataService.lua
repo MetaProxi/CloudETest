@@ -1,6 +1,7 @@
 --Rodux main service
 
 --API Services
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --Knit
@@ -14,8 +15,10 @@ local ReplicationMiddleware = require(script.Parent.Parent.Modules.ReplicationMi
 local DataService = Knit.CreateService {
     Name = "DataService";
     Reducers = {};
+    SyncFunctions = {};
     Client = {
         Action = Knit:CreateSignal();
+        DataSync = Knit:CreateSignal();
     }
 }
 
@@ -29,8 +32,17 @@ function DataService:AddReducer(name: string, reducer: () -> {})
     self.Reducers[name] = reducer
 end
 
+function DataService:AddSyncFunction(name: string, syncFunction: () -> {}) -- Used by global reducers to provide clients with non-specific data
+    if not self.Store then warn("Store not initialized") return end
+    self.SyncFunctions[name] = syncFunction
+end
+
 function DataService:GetStore()
     return self.Store
+end
+
+function DataService:GetState()
+    return self.Store:getState()
 end
 
 function DataService:KnitInit()
@@ -42,10 +54,22 @@ function DataService:KnitInit()
         for _,reducer in pairs(self.Reducers) do
             state = reducer(state,action)
         end
+
+        --[[if action.type == "removePlayer" then -- Remove player from state when they leave
+            state.players[action.player.UserId] = nil
+        end]]
+
         return state
     end
 
-    self.Store = Rodux.Store.new(globalReducer,{},{ReplicationMiddleware(self.Client.Action)})
+    self.Store = Rodux.Store.new(globalReducer,{players = {}},{ReplicationMiddleware(self.Client.Action)})
+
+    Players.PlayerRemoving:Connect(function(player)
+        self.Store:dispatch({
+            type = "removePlayer";
+            player = player;
+        })
+    end)
 
 end
 

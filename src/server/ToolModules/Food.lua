@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 --Dependencies
 local Comm = require(ReplicatedStorage.Packages.Comm).ServerComm
 local Knit = require(ReplicatedStorage.Packages.Knit)
+local ItemData = require(ReplicatedStorage.Common.ItemData)
 
 local Food = {Tools = {}}
 
@@ -19,12 +20,14 @@ function Food:ConnectTool(player: Player, tool: Tool)
         toolComm = toolComm
     }
 
+    local saturation = ItemData[tool.Name].Saturation
+
     toolComm:CreateSignal("Eat"):Connect(function()
         print("Eating")
         dataService:Dispatch({
             type = "incrementStat",
             stat = "Hunger",
-            value = 10,
+            value = saturation,
             player = player
         })
 

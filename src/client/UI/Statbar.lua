@@ -16,12 +16,6 @@ function StatBar:init()
         hovered = false,
     })
 
-    self.defaultProps = {
-        AnchorPoint = Vector2.new(0.5,0.5),
-        Stat = "Hunger",
-        Size = UDim2.new(0.2,0,1,0),
-    }
-
     self.styles,self.springApi = RoactSpring.Controller.new({
         percentage = 0.1,
         config = {mass = 0.4,tension = 300} -- Low mass to keep the animation snappy
@@ -37,13 +31,20 @@ function StatBar:render()
 
     local displayText = self.state.hovered and string.format("%.1f/%s",value,maxValue) or self.props.Stat
 
+    local color = self.props.Color or Color3.fromRGB(145, 99, 0)
+    local fillColor = self.props.FillColor or Color3.fromRGB(221, 159, 25)
+    local strokeColor = self.props.StrokeColor or Color3.fromRGB(235, 210, 179)
+    local textStrokeColor = self.props.TextStrokeColor or Color3.fromRGB(95, 59, 0)
+
+    textStrokeColor = string.format("rgb(%d,%d,%d)",textStrokeColor.R,textStrokeColor.G,textStrokeColor.B)
+
     self.springApi:start({
         percentage = percentage
     })
 
     return Roact.createElement("Frame", {
         Size = self.props.Size,
-        BackgroundColor3 = Color3.fromRGB(145, 99, 0),
+        BackgroundColor3 = color,
         BorderSizePixel = 0,
         AnchorPoint = self.props.AnchorPoint,
     }, {
@@ -73,7 +74,7 @@ function StatBar:render()
             Position = UDim2.new(0.5,0,0,0),
             BackgroundTransparency = 1,
             RichText = true,
-            Text = string.format("<stroke thickness='2' color='rgb(95, 59, 0)'><b>%s</b></stroke>",displayText),
+            Text = string.format("<stroke thickness='2' color='%s'><b>%s</b></stroke>",textStrokeColor,displayText),
             TextColor3 = Color3.fromRGB(255, 255, 255),
             TextScaled = true,
             TextXAlignment = Enum.TextXAlignment.Left,
@@ -95,7 +96,7 @@ function StatBar:render()
         }),
 
         Roact.createElement("UIStroke", {
-            Color = Color3.fromRGB(235, 210, 179),
+            Color = strokeColor,
             Thickness = 3,
         }),
 
@@ -106,7 +107,7 @@ function StatBar:render()
             Size = self.styles.percentage:map(function(percentage)
                 return UDim2.new(percentage,0,1,0)
             end),
-            BackgroundColor3 = Color3.fromRGB(221, 159, 25),
+            BackgroundColor3 = fillColor,
             BorderSizePixel = 0,
         }, {Roact.createElement("UICorner", {
                 CornerRadius = UDim.new(0,10),
@@ -116,6 +117,7 @@ function StatBar:render()
 end
 
 StatBar = RoactRodux.connect(function(state,props)
+    if not state.stats then return {} end
     return {
         value = state.stats[props.Stat] or 0,
         maxValue = 100,

@@ -2,6 +2,7 @@
 
 
 --API Services
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --Knit
@@ -10,6 +11,9 @@ local Knit = require(ReplicatedStorage.Packages.Knit)
 --Dependencies
 local Rodux = require(ReplicatedStorage.Packages.Rodux)
 
+--Variables
+local LocalPlayer = Players.LocalPlayer
+
 --Controller
 local DataController = Knit.CreateController {
     Name = "DataController";
@@ -17,12 +21,12 @@ local DataController = Knit.CreateController {
 }
 
 function DataController:Dispatch(actionTable) -- Ideally this would only be used by replication to keep game state in sync
-    if not self.Store then warn("Store not initialized") return end
+    if not self.Store then warn("Store not initialized - Dispatch: ",debug.traceback(3)) return end
     self.Store:dispatch(actionTable)
 end
 
 function DataController:AddReducer(name, reducer)
-    if not self.Store then warn("Store not initialized") return end
+    if not self.Store then warn("Store not initialized - AddReducer: ",debug.traceback(3)) return end
     self.Reducers[name] = reducer
 end
 
@@ -38,21 +42,31 @@ function DataController:KnitInit()
         for _,reducer in pairs(self.Reducers) do
             state = reducer(state,action)
         end
+
+        -- Replication Middleware
+        if action.type == "replicate" then
+            print(action.newState)
+            return action.newState
+        end
+
         return state
     end
 
-    self:AddReducer("Replication",function(state,action)
-        if action.type == "syncState" then
-            state = action.newState
+    self.Store = Rodux.Store.new(globalReducer,{},{})
+
+    dataService.Action:Connect(function(newState)
+        local playerTable = newState.players[tostring(LocalPlayer.UserId)]
+        --Merge player table into local player state
+        for key,value in playerTable do
+            newState[key] = value
         end
-        return state
-    end)
+        newState.players = nil
 
-    dataService.Action:Connect(function(action)
-        self:Dispatch(action)
+        self:Dispatch({
+            type = "replicate",
+            newState = newState
+        })
     end)
-
-    self.Store = Rodux.Store.new(globalReducer,{inventory = {}, stats = {}, equipped = ""},{})
 end
 
 return DataController

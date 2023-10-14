@@ -10,10 +10,10 @@ local StarterGui = game:GetService("StarterGui")
 local Knit = require(ReplicatedStorage.Packages.Knit)
 
 --Dependencies
+local DataController
 local Hotbar = require(script.Parent.Parent.UI.Hotbar)
 local Roact = require(ReplicatedStorage.Packages.Roact)
 local RoactRodux = require(ReplicatedStorage.Packages.RoactRodux)
-
 
 --Variables
 local LocalPlayer = Players.LocalPlayer
@@ -23,9 +23,12 @@ local ItemData = require(ReplicatedStorage.Common.ItemData)
 
 --Helper Functions
 local function ConnectTool(tool)
+    print("Connect tool?")
     for _,tag in pairs(CollectionService:GetTags(tool)) do
         local toolModule = ToolModules:FindFirstChild(tag)
+        print("weewoo")
         if toolModule then
+            print("Matched tool")
             require(toolModule):ConnectTool(tool)
         end
     end
@@ -43,68 +46,56 @@ end
 --Controller
 local InventoryController = Knit.CreateController {
     Name = "InventoryController";
-    Inventory = {};
 }
 
+function InventoryController:EquipTool(toolId)
+    local tool = LocalPlayer.Backpack:FindFirstChild(toolId)
+    if tool then
+        local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local Humanoid = LocalPlayer.Character:WaitForChild("Humanoid")
+        tool.Parent = Character
+        Humanoid:EquipTool(tool)
+    end
+end
+
+function InventoryController:UnequipTool()
+    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local Humanoid = LocalPlayer.Character:WaitForChild("Humanoid")
+    Humanoid:UnequipTools()
+end
 
 function InventoryController:KnitStart()
-    local inventoryService = Knit.GetService("InventoryService")
-
-    local dataController = Knit.GetController("DataController")
+    DataController = Knit.GetController("DataController")
 
     StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack,false)
 
-    local function inventoryReducer(state,action)
-        
-        if action.type == "addItem" then
-            local newInventory = table.clone(state.inventory)
-            local existingItem = newInventory[action.item.itemId]
-            if existingItem then -- Item already exists, increment quantity
-                existingItem.quantity = existingItem.quantity + action.item.quantity
-                state.inventory = newInventory
-            else -- Item doesn't exist, add it and find the tool in backpack
-                local playerBackpack = LocalPlayer:FindFirstChild("Backpack")
-                local data = ItemData[action.item.itemId]
-                local tool = playerBackpack:FindFirstChild(data.Tool.Name)
-                action.item.tool = tool
-                newInventory[action.item.itemId] = action.item
-                state.inventory = newInventory
-                ConnectTool(tool) -- Setup the tool
+    DataController:GetStore().changed:connect(function(newState,oldState)
+        local newInventory = newState.inventory
+        local oldInventory = oldState.inventory or {}
 
-                
-            end
-        elseif action.type == "removeItem" then
-            local item = action.itemId
-            local newInventory = table.clone(state.inventory)
-            newInventory[item].quantity = newInventory[item].quantity - (action.quantity or 1)
-            if newInventory[item].quantity <= 0 then
-                state.equipped = ""
-                DisconnectTool(newInventory[item].tool) -- Disconnect the tool and cleanup
-                newInventory[item].tool:Destroy()
-                newInventory[item] = nil
-            end
-
-            state.inventory = newInventory
-        elseif action.type == "equipItem" then
-            state.equipped = action.itemId
-            local tool = state.inventory[action.itemId].tool
-            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid:EquipTool(tool)
-            end
-        elseif action.type == "unequipItem" then
-            state.equipped = ""
-            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid:UnequipTools()
+        if newInventory then
+            for key,item in pairs(newInventory) do
+                if not oldInventory[key] then
+                    local tool = item.tool
+                    if tool then
+                        ConnectTool(tool)
+                    end
+                end
             end
         end
-        return state
-    end
 
-    dataController:AddReducer("Inventory",inventoryReducer)
-
-    
+        if oldInventory then
+            for key,item in pairs(oldInventory) do
+                if not newInventory[key] then
+                    local tool = item.tool
+                    if tool then
+                        DisconnectTool(tool)
+                        tool:Destroy()
+                    end
+                end
+            end
+        end
+    end)
 
 end
 

@@ -7,7 +7,8 @@ local Players = game:GetService("Players")
 local Knit = require(ReplicatedStorage.Packages.Knit)
 
 --Dependencies
-
+local DataController
+local InventoryController
 local RoactRodux = require(ReplicatedStorage.Packages.RoactRodux)
 local Roact = require(ReplicatedStorage.Packages.Roact)
 
@@ -22,11 +23,22 @@ local LocalPlayer = Players.LocalPlayer
 local HudController = Knit.CreateController { Name = "HudController" }
 
 function HudController:KnitStart()
-    local dataController = Knit.GetController("DataController")
+    DataController = Knit.GetController("DataController")
+    InventoryController = Knit.GetController("InventoryController")
 
-    local ui = Roact.createElement("ScreenGui",{},{
+    local function toolSelected(toolId)
+        print(toolId)
+        if toolId == "" then
+            InventoryController:UnequipTool()
+        else
+            InventoryController:EquipTool(toolId)
+        end
+    
+    end
+
+    local ui = Roact.createElement("ScreenGui",{ResetOnSpawn = false},{
         StoreProvider = Roact.createElement(RoactRodux.StoreProvider,{
-            store = dataController:GetStore();
+            store = DataController:GetStore();
         },{
 
             Main = Roact.createElement("Frame", {
@@ -37,6 +49,7 @@ function HudController:KnitStart()
                     Position = UDim2.new(0.5,0,0.95,-10),
                     AnchorPoint = Vector2.new(0.5,1),
                     Inventory = {},
+                    onSelect = toolSelected,
                 }),
                 Stats = Roact.createElement(Stats,{
                     AnchorPoint = Vector2.new(0.5,1),
